@@ -3,6 +3,7 @@ package com.example.spring_authorization_server.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -23,6 +24,8 @@ public class AuthorizationServerConfig {
                 .securityMatcher("/oauth2/**", "/.well-known/**")
                 .with(new OAuth2AuthorizationServerConfigurer(), Customizer.withDefaults())
                 .authorizeHttpRequests(authorize -> authorize
+                        // ✅ Cho phép OPTIONS requests cho CORS preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions
@@ -30,7 +33,11 @@ public class AuthorizationServerConfig {
                                 new LoginUrlAuthenticationEntryPoint("/login"),
                                 new MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                         )
-                );
+                )
+                // ✅ Enable CORS
+                .cors(Customizer.withDefaults())
+                // ✅ Disable CSRF for API endpoints
+                .csrf(csrf -> csrf.disable());
 
         return http.build();
     }
@@ -43,10 +50,14 @@ public class AuthorizationServerConfig {
                 // Áp dụng cho tất cả các request còn lại
                 .securityMatcher("/**")
                 .authorizeHttpRequests(auth -> auth
+                        // ✅ Cho phép OPTIONS requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/login", "/error").permitAll()  // Cho phép truy cập login và error
                         .anyRequest().authenticated()
                 )
-                .formLogin(Customizer.withDefaults());
+                .formLogin(Customizer.withDefaults())
+                // ✅ Enable CORS
+                .cors(Customizer.withDefaults());
 
         return http.build();
     }
